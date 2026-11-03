@@ -87,6 +87,8 @@ func TestIndexResponseErrors(t *testing.T) {
 		{"empty choices", `{"choices":[]}`, ErrInvalidResponse},
 		{"empty text", `{"choices":[{"message":{"content":" "}}]}`, ErrInvalidResponse},
 		{"unfinished thought", `{"choices":[{"message":{"content":"<think>secret"}}]}`, ErrInvalidResponse},
+		{"unfinished thought after text", `{"choices":[{"message":{"content":"translation<think>secret"}}]}`, ErrInvalidResponse},
+		{"unfinished thought after completed", `{"choices":[{"message":{"content":"<think>done</think><think>secret"}}]}`, ErrInvalidResponse},
 		{"truncated", `{"choices":[{"message":{"content":"partial"},"finish_reason":"length"}]}`, ErrTruncated},
 		{"filtered", `{"choices":[{"message":{},"finish_reason":"content_filter"}]}`, nil},
 		{"refusal", `{"choices":[{"message":{"refusal":"blocked"}}]}`, nil},

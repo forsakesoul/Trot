@@ -7,6 +7,7 @@ needs a `## <version>` section here, or its build fails.
 
 - Use local Index-Translate models from **Settings > Services**, with an optional API key.
 - Press `⌘6` in the panel to select Index-Translate; existing service shortcuts stay the same.
+- Show an error if a local model returns unfinished reasoning instead of a clean translation.
 
 ## 0.6.0
 

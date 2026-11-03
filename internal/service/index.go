@@ -93,7 +93,8 @@ func translateIndex(ctx context.Context, c Config, text string, source, target l
 	// Match the official safety net, but never display unfinished reasoning.
 	if _, after, ok := strings.Cut(result, "</think>"); ok {
 		result = strings.TrimSpace(after)
-	} else if strings.HasPrefix(result, "<think>") {
+	}
+	if strings.Contains(result, "<think>") {
 		return ErrInvalidResponse
 	}
 	if result == "" {
