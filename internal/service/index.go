@@ -90,12 +90,13 @@ func translateIndex(ctx context.Context, c Config, text string, source, target l
 		return &RefusedError{choice.Message.Refusal}
 	}
 	result := strings.TrimSpace(choice.Message.Content)
-	// Match the official safety net, but never display unfinished reasoning.
-	if _, after, ok := strings.Cut(result, "</think>"); ok {
+	// Only leading blocks are reasoning; tags in the translation may be literal.
+	for strings.HasPrefix(result, "<think>") {
+		_, after, ok := strings.Cut(result, "</think>")
+		if !ok {
+			return ErrInvalidResponse
+		}
 		result = strings.TrimSpace(after)
-	}
-	if strings.Contains(result, "<think>") {
-		return ErrInvalidResponse
 	}
 	if result == "" {
 		return ErrInvalidResponse

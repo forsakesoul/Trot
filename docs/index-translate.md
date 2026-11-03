@@ -59,5 +59,6 @@ API keys remain on this Mac.
 - **Cut-off translation:** the server reported the 1024-token output limit.
   Retry with shorter source text. Incomplete output is not shown as a finished translation.
 - **Invalid response:** check that the server supports OpenAI chat completions
-  and returns a nonempty message. Unfinished `<think>` output is rejected rather
-  than presented as a translation.
+  and returns a nonempty message. Leading `<think>…</think>` reasoning blocks are
+  removed; unfinished leading blocks are rejected. Literal tags within the
+  translation, inline code or fenced examples are preserved.

@@ -78,6 +78,36 @@ func TestIndexRequest(t *testing.T) {
 	}
 }
 
+func TestIndexResponseContent(t *testing.T) {
+	for _, tc := range []struct {
+		name, content, want string
+	}{
+		{"closing tag in text", "使用 </think> 结束推理块，然后输出答案", "使用 </think> 结束推理块，然后输出答案"},
+		{"opening tag in text", "使用 <think> 开始推理块", "使用 <think> 开始推理块"},
+		{"inline code", "保留 `<think>` 和 `</think>` 标签", "保留 `<think>` 和 `</think>` 标签"},
+		{"code span at start", "`<think>` 与 `</think>`", "`<think>` 与 `</think>`"},
+		{"code fence at start", "```html\n<think>示例</think>\n```", "```html\n<think>示例</think>\n```"},
+		{"unclosed literal after text", "translation<think>secret", "translation<think>secret"},
+		{"literal after reasoning", "<think>private reasoning</think>使用 </think> 结束推理块", "使用 </think> 结束推理块"},
+		{"opening literal after reasoning", "<think>private reasoning</think>使用 <think> 开始推理块", "使用 <think> 开始推理块"},
+		{"consecutive reasoning", " <think>first</think>\n<think>second</think>\n你好 ", "你好"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{
+					"message": map[string]string{"content": tc.content}, "finish_reason": "stop",
+				}}})
+			}))
+			defer server.Close()
+			var result strings.Builder
+			err := Translate(context.Background(), IndexTranslate, Config{BaseURL: server.URL}, "text", lang.English, lang.ChineseSimplified, func(c Chunk) { result.WriteString(c.Text) })
+			if err != nil || result.String() != tc.want {
+				t.Fatalf("got %q, error %v; want %q", result.String(), err, tc.want)
+			}
+		})
+	}
+}
+
 func TestIndexResponseErrors(t *testing.T) {
 	for _, tc := range []struct {
 		name, body string
@@ -87,7 +117,6 @@ func TestIndexResponseErrors(t *testing.T) {
 		{"empty choices", `{"choices":[]}`, ErrInvalidResponse},
 		{"empty text", `{"choices":[{"message":{"content":" "}}]}`, ErrInvalidResponse},
 		{"unfinished thought", `{"choices":[{"message":{"content":"<think>secret"}}]}`, ErrInvalidResponse},
-		{"unfinished thought after text", `{"choices":[{"message":{"content":"translation<think>secret"}}]}`, ErrInvalidResponse},
 		{"unfinished thought after completed", `{"choices":[{"message":{"content":"<think>done</think><think>secret"}}]}`, ErrInvalidResponse},
 		{"truncated", `{"choices":[{"message":{"content":"partial"},"finish_reason":"length"}]}`, ErrTruncated},
 		{"filtered", `{"choices":[{"message":{},"finish_reason":"content_filter"}]}`, nil},
